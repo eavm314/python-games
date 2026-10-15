@@ -1,255 +1,262 @@
-import sys    # para usar exit()
-import time   # para usar sleep()
+import sys    # to use exit()
+import time   # to use sleep()
 import pygame
 
-ANCHO = 640 # Ancho de la pantalla.
-ALTO = 480  # Alto de la pantalla.
-color_azul = (0, 0, 64)  # Color azul para el fondo.
-color_blanco = (255, 255, 255) # Color blanco, para textos.
+WIDTH = 640   # Screen width.
+HEIGHT = 480  # Screen height.
+COLOR_BLUE = (0, 0, 64)         # Blue color for the background.
+COLOR_WHITE = (255, 255, 255)   # White color, for text.
 
 
-class Escena:
-    "Esqueleto para cada una de las escenas del videojuego."
+class Scene:
+    """Skeleton for each of the game's scenes."""
+
     def __init__(self):
-        self.proximaEscena = False
-        self.jugando = True
+        self.next_scene = False
+        self.playing = True
 
-    def leer_eventos(self, eventos):
-        "Lee los eventos para interactuar con los objetos."
+    def read_events(self, events):
+        """Read events to interact with the objects."""
         pass
 
-    def actualizar(self):
-        "Actualiza los objetos en la pantalla."
+    def update(self):
+        """Update the objects on the screen."""
         pass
 
-    def dibujar(self, pantalla):
-        "Dibuja los objetos en la pantalla."
+    def draw(self, screen):
+        """Draw the objects on the screen."""
         pass
 
-    def cambiar_escena(self, escena):
-        "Cambia la escena del juego."
-        self.proximaEscena = escena
+    def change_scene(self, scene):
+        """Change the game scene."""
+        self.next_scene = scene
+
 
 class Director:
-    def __init__(self, titulo = "", res = (ANCHO, ALTO)):
+    def __init__(self, title="", resolution=(WIDTH, HEIGHT)):
         pygame.init()
-        # Inicializando pantalla.
-        self.pantalla = pygame.display.set_mode(res)
-        # Configurar título de pantalla.
-        pygame.display.set_caption(titulo)
-        # Crear el reloj.
-        self.reloj = pygame.time.Clock()
-        self.escena = None
-        self.escenas = {}
+        # Initialize the screen.
+        self.screen = pygame.display.set_mode(resolution)
+        # Set the window title.
+        pygame.display.set_caption(title)
+        # Create the clock.
+        self.clock = pygame.time.Clock()
+        self.scene = None
+        self.scenes = {}
 
-    def ejecutar(self, escena_inicial, fps = 60):
-        self.escena = self.escenas[escena_inicial]
-        jugando = True
-        while jugando:
-            self.reloj.tick(fps)
-            eventos = pygame.event.get()
-            # Revisar todos los eventos.
-            for evento in eventos:
-                # Si se presiona la tachita de la barra de título,
-                if evento.type == pygame.QUIT:
-                    # cerrar el videojuego.
-                    jugando = False
+    def run(self, initial_scene, fps=60):
+        self.scene = self.scenes[initial_scene]
+        playing = True
+        while playing:
+            self.clock.tick(fps)
+            events = pygame.event.get()
+            # Check all events.
+            for event in events:
+                # If the close button on the title bar is pressed,
+                if event.type == pygame.QUIT:
+                    # close the game.
+                    playing = False
 
-            self.escena.leer_eventos(eventos)
-            self.escena.actualizar()
-            self.escena.dibujar(self.pantalla)
+            self.scene.read_events(events)
+            self.scene.update()
+            self.scene.draw(self.screen)
 
-            self.elegirEscena(self.escena.proximaEscena)
+            self.choose_scene(self.scene.next_scene)
 
-            if jugando:
-                jugando = self.escena.jugando
+            if playing:
+                playing = self.scene.playing
 
             pygame.display.flip()
 
         time.sleep(3)
 
-    def elegirEscena(self, proximaEscena):
-        if proximaEscena:
-            if proximaEscena not in self.escenas:
-                self.agregarEscena(proximaEscena)
-            self.escena = self.escenas[proximaEscena]
+    def choose_scene(self, next_scene):
+        if next_scene:
+            if next_scene not in self.scenes:
+                self.add_scene(next_scene)
+            self.scene = self.scenes[next_scene]
 
-    def agregarEscena(self, escena):
-        escenaClase = 'Escena'+escena
-        escenaObj = globals()[escenaClase]
-        self.escenas[escena] = escenaObj();
+    def add_scene(self, scene):
+        scene_class_name = 'Scene' + scene
+        scene_class = globals()[scene_class_name]
+        self.scenes[scene] = scene_class()
 
 
-class EscenaNivel1(Escena):
+class SceneLevel1(Scene):
     def __init__(self):
-        Escena.__init__(self)
+        Scene.__init__(self)
 
-        self.bolita = Bolita()
-        self.jugador = Paleta()
-        self.muro = Muro(50)
+        self.ball = Ball()
+        self.player = Paddle()
+        self.wall = Wall(50)
 
-        self.puntuacion = 0
-        self.vidas = 3
-        self.esperando_saque = True
+        self.score = 0
+        self.lives = 3
+        self.waiting_to_serve = True
 
-        # Ajustar repetición de evento de tecla presionada.
+        # Set key repeat delay for held-down keys.
         pygame.key.set_repeat(30)
 
-    def leer_eventos(self, eventos):
-        for evento in eventos:
-            if evento.type == pygame.KEYDOWN:
-                self.jugador.update(evento)
-                if self.esperando_saque == True and evento.key == pygame.K_SPACE:
-                    self.esperando_saque = False
-                    if self.bolita.rect.centerx < ANCHO / 2:
-                        self.bolita.speed = [3, -3]
+    def read_events(self, events):
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                self.player.update(event)
+                if self.waiting_to_serve and event.key == pygame.K_SPACE:
+                    self.waiting_to_serve = False
+                    if self.ball.rect.centerx < WIDTH / 2:
+                        self.ball.speed = [3, -3]
                     else:
-                        self.bolita.speed = [-3, -3]
+                        self.ball.speed = [-3, -3]
 
-    def actualizar(self):
-        # Actualizar posición de la bolita.
-        if self.esperando_saque == False:
-            self.bolita.update()
+    def update(self):
+        # Update the ball's position.
+        if not self.waiting_to_serve:
+            self.ball.update()
         else:
-            self.bolita.rect.midbottom = self.jugador.rect.midtop
+            self.ball.rect.midbottom = self.player.rect.midtop
 
-        # Colisión entre bolita y jugador.
-        if pygame.sprite.collide_rect(self.bolita, self.jugador):
-            self.bolita.speed[1] = -self.bolita.speed[1]
+        # Collision between ball and player.
+        if pygame.sprite.collide_rect(self.ball, self.player):
+            self.ball.speed[1] = -self.ball.speed[1]
 
-        # Colisión de la bolita con el muro.
-        lista = pygame.sprite.spritecollide(self.bolita, self.muro, False)
-        if lista:
-            ladrillo = lista[0]
-            cx = self.bolita.rect.centerx
-            if cx < ladrillo.rect.left or cx > ladrillo.rect.right:
-                self.bolita.speed[0] = -self.bolita.speed[0]
+        # Collision between ball and wall.
+        collided_bricks = pygame.sprite.spritecollide(self.ball, self.wall, False)
+        if collided_bricks:
+            brick = collided_bricks[0]
+            center_x = self.ball.rect.centerx
+            if center_x < brick.rect.left or center_x > brick.rect.right:
+                self.ball.speed[0] = -self.ball.speed[0]
             else:
-                self.bolita.speed[1] = -self.bolita.speed[1]
-            self.muro.remove(ladrillo)
-            self.puntuacion += 10
+                self.ball.speed[1] = -self.ball.speed[1]
+            self.wall.remove(brick)
+            self.score += 10
 
-        # Revisar si bolita sale de la pantalla.
-        if self.bolita.rect.top > ALTO:
-            self.vidas -= 1
-            self.esperando_saque = True
+        # Check whether the ball left the screen.
+        if self.ball.rect.top > HEIGHT:
+            self.lives -= 1
+            self.waiting_to_serve = True
 
-        if self.vidas <= 0:
-            self.cambiar_escena('JuegoTerminado')
+        if self.lives <= 0:
+            self.change_scene('GameOver')
 
-    def dibujar(self, pantalla):
-        # Rellenar la pantalla.
-        pantalla.fill(color_azul)
-        # Mostrar puntuación
-        self.mostrar_puntuacion(pantalla)
-        # Mostrar vidas.
-        self.mostrar_vidas(pantalla)
-        # Dibujar bolita en pantalla.
-        pantalla.blit(self.bolita.image, self.bolita.rect)
-        # Dibujar jugador en pantalla.
-        pantalla.blit(self.jugador.image, self.jugador.rect)
-        # Dibujar los ladrillos.
-        self.muro.draw(pantalla)
+    def draw(self, screen):
+        # Fill the screen.
+        screen.fill(COLOR_BLUE)
+        # Show the score.
+        self.show_score(screen)
+        # Show the lives.
+        self.show_lives(screen)
+        # Draw the ball on the screen.
+        screen.blit(self.ball.image, self.ball.rect)
+        # Draw the player on the screen.
+        screen.blit(self.player.image, self.player.rect)
+        # Draw the bricks.
+        self.wall.draw(screen)
 
-    def mostrar_puntuacion(self, pantalla):
-        fuente = pygame.font.SysFont('Consolas', 20)
-        texto = fuente.render(str(self.puntuacion).zfill(5), True, color_blanco)
-        texto_rect = texto.get_rect()
-        texto_rect.topleft = [0, 0]
-        pantalla.blit(texto, texto_rect)
+    def show_score(self, screen):
+        font = pygame.font.SysFont('Consolas', 20)
+        text = font.render(str(self.score).zfill(5), True, COLOR_WHITE)
+        text_rect = text.get_rect()
+        text_rect.topleft = [0, 0]
+        screen.blit(text, text_rect)
 
-    def mostrar_vidas(self, pantalla):
-        fuente = pygame.font.SysFont('Consolas', 20)
-        cadena = "Vidas: " + str(self.vidas).zfill(2)
-        texto = fuente.render(cadena, True, color_blanco)
-        texto_rect = texto.get_rect()
-        texto_rect.topright = [ANCHO, 0]
-        pantalla.blit(texto, texto_rect)
-
-class EscenaJuegoTerminado(Escena):
-    def actualizar(self):
-        self.jugando = False
-
-    def dibujar(self, pantalla):
-        fuente = pygame.font.SysFont('Arial', 72)
-        texto = fuente.render('Juego terminado :(', True, color_blanco)
-        texto_rect = texto.get_rect()
-        texto_rect.center = [ANCHO / 2, ALTO / 2]
-        pantalla.blit(texto, texto_rect)
+    def show_lives(self, screen):
+        font = pygame.font.SysFont('Consolas', 20)
+        label = "Lives: " + str(self.lives).zfill(2)
+        text = font.render(label, True, COLOR_WHITE)
+        text_rect = text.get_rect()
+        text_rect.topright = [WIDTH, 0]
+        screen.blit(text, text_rect)
 
 
-class Bolita(pygame.sprite.Sprite):
+class SceneGameOver(Scene):
+    def update(self):
+        self.playing = False
+
+    def draw(self, screen):
+        font = pygame.font.SysFont('Arial', 72)
+        text = font.render('Game over :(', True, COLOR_WHITE)
+        text_rect = text.get_rect()
+        text_rect.center = [WIDTH / 2, HEIGHT / 2]
+        screen.blit(text, text_rect)
+
+
+class Ball(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        # Cargar imagen
+        # Load the image.
         self.image = pygame.image.load('./assets/ball.png')
-        # Obtener rectángulo de la imagen
+        # Get the image's rectangle.
         self.rect = self.image.get_rect()
-        # Posición inicial centrada en pantalla.
-        self.rect.centerx = ANCHO / 2
-        self.rect.centery = ALTO / 2
-        # Establecer velocidad inicial.
+        # Initial position centered on the screen.
+        self.rect.centerx = WIDTH / 2
+        self.rect.centery = HEIGHT / 2
+        # Set the initial speed.
         self.speed = [3, 3]
 
     def update(self):
-        # Evitar que salga por debajo.
+        # Bounce off the top edge.
         if self.rect.top <= 0:
             self.speed[1] = -self.speed[1]
-        # Evitar que salga por la derecha.
-        elif self.rect.right >= ANCHO or self.rect.left <= 0:
+        # Bounce off the left and right edges.
+        elif self.rect.right >= WIDTH or self.rect.left <= 0:
             self.speed[0] = -self.speed[0]
-        # Mover en base a posición actual y velocidad.
+        # Move based on current position and speed.
         self.rect.move_ip(self.speed)
 
-class Paleta(pygame.sprite.Sprite):
+
+class Paddle(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        # Cargar imagen
+        # Load the image.
         self.image = pygame.image.load('./assets/player.png')
-        # Obtener rectángulo de la imagen
+        # Get the image's rectangle.
         self.rect = self.image.get_rect()
-        # Posición inicial centrada en pantalla en X.
-        self.rect.midbottom = (ANCHO / 2, ALTO - 20)
-        # Establecer velocidad inicial.
+        # Initial position, horizontally centered on the screen.
+        self.rect.midbottom = (WIDTH / 2, HEIGHT - 20)
+        # Set the initial speed.
         self.speed = [0, 0]
 
-    def update(self, evento):
-        # Buscar si se presionó flecha izquierda.
-        if evento.key == pygame.K_LEFT and self.rect.left > 0:
+    def update(self, event):
+        # Check whether the left arrow was pressed.
+        if event.key == pygame.K_LEFT and self.rect.left > 0:
             self.speed = [-5, 0]
-        # Si se presionó flecha derecha.
-        elif evento.key == pygame.K_RIGHT and self.rect.right < ANCHO:
+        # Check whether the right arrow was pressed.
+        elif event.key == pygame.K_RIGHT and self.rect.right < WIDTH:
             self.speed = [5, 0]
         else:
             self.speed = [0, 0]
-        # Mover en base a posición actual y velocidad.
+        # Move based on current position and speed.
         self.rect.move_ip(self.speed)
 
-class Ladrillo(pygame.sprite.Sprite):
-    def __init__(self, posicion):
-        pygame.sprite.Sprite.__init__(self)
-        # Cargar imagen
-        self.image = pygame.image.load('./assets/brick.png')
-        # Obtener rectángulo de la imagen
-        self.rect = self.image.get_rect()
-        # Posición inicial, provista externamente.
-        self.rect.topleft = posicion
 
-class Muro(pygame.sprite.Group):
-    def __init__(self, cantidadLadrillos):
+class Brick(pygame.sprite.Sprite):
+    def __init__(self, position):
+        pygame.sprite.Sprite.__init__(self)
+        # Load the image.
+        self.image = pygame.image.load('./assets/brick.png')
+        # Get the image's rectangle.
+        self.rect = self.image.get_rect()
+        # Initial position, provided externally.
+        self.rect.topleft = position
+
+
+class Wall(pygame.sprite.Group):
+    def __init__(self, brick_count):
         pygame.sprite.Group.__init__(self)
 
         pos_x = 0
         pos_y = 20
-        for i in range(cantidadLadrillos):
-            ladrillo = Ladrillo((pos_x, pos_y))
-            self.add(ladrillo)
+        for _ in range(brick_count):
+            brick = Brick((pos_x, pos_y))
+            self.add(brick)
 
-            pos_x += ladrillo.rect.width
-            if pos_x >= ANCHO:
+            pos_x += brick.rect.width
+            if pos_x >= WIDTH:
                 pos_x = 0
-                pos_y += ladrillo.rect.height
+                pos_y += brick.rect.height
 
-director = Director('Juego de ladrillos', (ANCHO, ALTO))
-director.agregarEscena('Nivel1')
-director.ejecutar('Nivel1')
+
+director = Director('Brick Game', (WIDTH, HEIGHT))
+director.add_scene('Level1')
+director.run('Level1')
