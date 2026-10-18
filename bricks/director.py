@@ -1,7 +1,6 @@
-import time
 import pygame
-from config import HEIGHT, TITLE, WIDTH
-from scenes import SceneLevel, SceneGameOver
+from config import HEIGHT, TITLE, WIDTH, UNLOCKED_LEVELS
+from scenes import SceneGameOver, SceneLevel, SceneLevelsMenu
 
 class Director:
     def __init__(self):
@@ -13,9 +12,10 @@ class Director:
         pygame.display.set_caption(TITLE)
         # Create the clock.
         self.clock = pygame.time.Clock()
-        self.scenes = {
-            'Level1': SceneLevel,
-            'GameOver': SceneGameOver,
+        self.context = {
+            'unlocked_level': 10 if UNLOCKED_LEVELS else 1,
+            'completed_levels': set(),
+            'score': 0,
         }
 
     def run(self, initial_scene, fps=60):
@@ -43,10 +43,17 @@ class Director:
 
             pygame.display.flip()
 
-        time.sleep(3)
+        pygame.quit()
 
     def choose_scene(self, next_scene):
         if next_scene:
-            if next_scene not in self.scenes:
-                raise ValueError(f"Scene '{next_scene}' not found.")
-            self.current_scene = self.scenes[next_scene]()
+            scene_name = next_scene[0] if isinstance(next_scene, tuple) else next_scene
+            level = next_scene[1] if isinstance(next_scene, tuple) else None
+            if scene_name == 'LevelsMenu':
+                self.current_scene = SceneLevelsMenu(self.context)
+            elif scene_name == 'Level':
+                self.current_scene = SceneLevel(self.context, level)
+            elif scene_name == 'GameOver':
+                self.current_scene = SceneGameOver(self.context)
+            else:
+                raise ValueError(f"Scene '{scene_name}' not found.")

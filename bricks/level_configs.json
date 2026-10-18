@@ -1,0 +1,12 @@
+{
+  "1": {"layout": "rows", "speed": [3, 3], "paddle_speed": 10, "lives": 3},
+  "2": {"layout": "pyramid", "speed": [3, 4], "paddle_speed": 10, "lives": 3},
+  "3": {"layout": "diamond", "speed": [4, 4], "paddle_speed": 10, "lives": 3},
+  "4": {"layout": "checkerboard", "speed": [4, 5], "paddle_speed": 10, "lives": 3},
+  "5": {"layout": "tunnel", "speed": [5, 5], "paddle_speed": 10, "lives": 3},
+  "6": {"layout": "zigzag", "speed": [5, 6], "paddle_speed": 11, "lives": 3},
+  "7": {"layout": "fortress", "speed": [6, 6], "paddle_speed": 11, "lives": 3},
+  "8": {"layout": "waves", "speed": [6, 7], "paddle_speed": 11, "lives": 2},
+  "9": {"layout": "cross", "speed": [7, 7], "paddle_speed": 12, "lives": 2},
+  "10": {"layout": "dense", "speed": [7, 8], "paddle_speed": 12, "lives": 2}
+}

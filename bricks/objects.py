@@ -64,16 +64,70 @@ class Brick(pygame.sprite.Sprite):
 
 
 class Wall(pygame.sprite.Group):
-    def __init__(self, brick_count):
+    def __init__(self, layout):
         pygame.sprite.Group.__init__(self)
 
-        pos_x = 0
-        pos_y = 20
-        for _ in range(brick_count):
-            brick = Brick((pos_x, pos_y))
-            self.add(brick)
+        sample_brick = Brick((0, 0))
+        columns = WIDTH // sample_brick.rect.width
+        positions = self.layout_positions(layout, columns)
+        for column, row in positions:
+            position = (column * sample_brick.rect.width, 20 + row * sample_brick.rect.height)
+            self.add(Brick(position))
 
-            pos_x += brick.rect.width
-            if pos_x >= WIDTH:
-                pos_x = 0
-                pos_y += brick.rect.height
+    @staticmethod
+    def layout_positions(layout, columns):
+        positions = set()
+
+        def add_row(row, start, end, step=1):
+            for column in range(start, end, step):
+                if 0 <= column < columns:
+                    positions.add((column, row))
+
+        if layout == 'rows':
+            for row in range(1):
+                add_row(row, 0, columns)
+        elif layout == 'pyramid':
+            for row in range(6):
+                width = 2 + row * 2
+                start = (columns - width) // 2
+                add_row(row, start, start + width)
+        elif layout == 'diamond':
+            widths = [4, 6, 8, 10, 8, 6, 4]
+            for row, width in enumerate(widths):
+                start = (columns - width) // 2
+                add_row(row, start, start + width)
+        elif layout == 'checkerboard':
+            for row in range(7):
+                add_row(row, row % 2, columns, 2)
+        elif layout == 'tunnel':
+            for row in range(6):
+                add_row(row, 0, 4)
+                add_row(row, columns - 4, columns)
+                if row in (0, 5):
+                    add_row(row, 4, columns - 4)
+        elif layout == 'zigzag':
+            for row in range(7):
+                start = 1 if row % 2 else columns // 3
+                add_row(row, start, start + columns // 2)
+        elif layout == 'fortress':
+            for row in range(6):
+                add_row(row, 0, 2)
+                add_row(row, columns - 2, columns)
+            add_row(0, 2, columns - 2)
+            add_row(5, 2, columns - 2)
+        elif layout == 'waves':
+            for row in range(7):
+                start = (row * 2) % 6
+                add_row(row, start, columns - start)
+        elif layout == 'cross':
+            center = columns // 2
+            for row in range(7):
+                add_row(row, center - 1, center + 2)
+            add_row(2, 2, columns - 2)
+            add_row(3, 2, columns - 2)
+            add_row(4, 2, columns - 2)
+        elif layout == 'dense':
+            for row in range(8):
+                add_row(row, 0, columns)
+
+        return positions

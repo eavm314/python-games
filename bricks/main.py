@@ -1,4 +1,4 @@
 from director import Director
 
 director = Director()
-director.run('Level1')
+director.run('LevelsMenu')
