@@ -1,4 +1,3 @@
-import time
 import pygame
 
 from config import HEIGHT, WIDTH
@@ -20,4 +19,3 @@ class SceneGameOver(Scene):
         text_rect = text.get_rect()
         text_rect.center = [WIDTH / 2, HEIGHT / 2]
         screen.blit(text, text_rect)
-        time.sleep(3)

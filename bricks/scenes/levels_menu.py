@@ -1,5 +1,5 @@
 import pygame
-from config import HEIGHT, WIDTH
+from config import HEIGHT, WIDTH, UNLOCKED_LEVELS
 from scenes.base import COLOR_BLUE, COLOR_WHITE, COLOR_YELLOW, Scene
 
 
@@ -7,7 +7,7 @@ class SceneLevelsMenu(Scene):
     def __init__(self, context):
         Scene.__init__(self)
         self.context = context
-        self.selected_level = min(context['unlocked_level'], 10)
+        self.selected_level = 1 if UNLOCKED_LEVELS else min(context['unlocked_level'], 10)
 
     def read_events(self, events):
         for event in events:
